@@ -1,0 +1,18 @@
+[package]
+name = "fairseq-crypto"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Cryptographic primitives for Fairseq"
+
+[dependencies]
+fairseq-core = { workspace = true }
+sha2 = { workspace = true }
+ed25519-dalek = { workspace = true }
+rand = { workspace = true }
+hex = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+
+
