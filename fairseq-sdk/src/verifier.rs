@@ -14,7 +14,8 @@ pub struct Verifier {
 impl Verifier {
     /// Create a new verifier
     pub async fn new(config: Config) -> Result<Self> {
-        let lighthouse = LighthouseClient::new(config.lighthouse.clone());
+        let lighthouse = LighthouseClient::new(config.lighthouse.clone())
+            .map_err(|e| FairseqError::LighthouseConnection(e.to_string()))?;
 
         lighthouse
             .get_current_epoch()
@@ -115,6 +116,110 @@ impl Verifier {
         }
 
         Ok(true)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use fairseq_core::{EpochAnchor, ProofType};
+
+    fn test_config() -> Config {
+        let mut config = Config::default();
+        config.lighthouse.http_url = "http://127.0.0.1:1".to_string();
+        config.lighthouse.ws_url = "ws://127.0.0.1:1".to_string();
+        config.lighthouse.timeout_secs = 1;
+        config
+    }
+
+    fn build_verifier() -> Verifier {
+        let config = test_config();
+        let lighthouse = LighthouseClient::new(config.lighthouse.clone()).unwrap();
+        Verifier { lighthouse }
+    }
+
+    fn mock_epoch_anchor(epoch_number: u64) -> EpochAnchor {
+        EpochAnchor {
+            epoch_number,
+            timestamp_ns: 1,
+            vdf_output: "00".to_string(),
+            epoch_hash: "00".to_string(),
+        }
+    }
+
+    fn mock_proof(proof_data: Vec<u8>) -> Proof {
+        Proof {
+            id: "proof-123".to_string(),
+            version: 1,
+            proof_type: ProofType::TemporalOrdering,
+            epoch_start: mock_epoch_anchor(1),
+            epoch_end: mock_epoch_anchor(2),
+            transactions_hash: "abc123".to_string(),
+            transaction_count: 1,
+            proof_data,
+            metadata: None,
+            created_at: chrono::Utc::now(),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_verifier_new_returns_err_without_lighthouse() {
+        let config = test_config();
+        let result = Verifier::new(config).await;
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_verify_proof_data_valid() {
+        let verifier = build_verifier();
+        let proof_data = serde_json::to_vec(&serde_json::json!({
+            "version": 1,
+            "type": "commitment",
+        }))
+        .unwrap();
+        let proof = mock_proof(proof_data);
+
+        let result = verifier.verify_proof_data(&proof).unwrap();
+        assert!(result);
+    }
+
+    #[test]
+    fn test_verify_proof_data_invalid_version() {
+        let verifier = build_verifier();
+        let proof_data = serde_json::to_vec(&serde_json::json!({
+            "version": 2,
+            "type": "commitment",
+        }))
+        .unwrap();
+        let proof = mock_proof(proof_data);
+
+        let result = verifier.verify_proof_data(&proof).unwrap();
+        assert!(!result);
+    }
+
+    #[test]
+    fn test_verify_proof_data_invalid_json() {
+        let verifier = build_verifier();
+        let proof = mock_proof(b"not-json".to_vec());
+
+        let result = verifier.verify_proof_data(&proof);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_compute_transactions_hash_deterministic() {
+        let transactions = vec![
+            Transaction::new("tx1", 1),
+            Transaction::new("tx2", 2),
+        ];
+        let tx_data: Vec<(String, u64)> = transactions
+            .iter()
+            .map(|t| (t.hash.clone(), t.timestamp_ns))
+            .collect();
+
+        let hash1 = hash_ordered_transactions(&tx_data);
+        let hash2 = hash_ordered_transactions(&tx_data);
+        assert_eq!(hash1, hash2);
     }
 }
 

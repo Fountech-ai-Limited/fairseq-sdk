@@ -1,27 +1,37 @@
 [package]
 name = "fairseq-sdk"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-authors.workspace = true
-description = "Fairseq SDK - Temporal ordering proofs for blockchain protocols"
-readme = "../README.md"
+version = "0.1.0"
+edition = "2021"
+description = "Fairseq SDK for temporal ordering proofs"
+license = "Apache-2.0"
+repository = "https://github.com/fairseq/fairseq-sdk"
+documentation = "https://docs.fairseq.io/sdk"
+readme = "README.md"
+keywords = ["fairseq", "ordering", "proofs", "blockchain", "mev"]
+categories = ["cryptography", "api-bindings"]
 
 [dependencies]
-fairseq-core = { workspace = true }
-fairseq-crypto = { workspace = true }
-fairseq-lighthouse = { workspace = true }
-tokio = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-thiserror = { workspace = true }
-tracing = { workspace = true }
-chrono = { workspace = true }
-hex = { workspace = true }
+fairseq-core = { path = "../fairseq-core" }
+fairseq-crypto = { path = "../fairseq-crypto" }
+fairseq-lighthouse = { path = "../fairseq-lighthouse" }
+reqwest = { version = "0.11", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+thiserror = "1.0"
+chrono = "0.4"
+hex = "0.4"
 uuid = { version = "1.6", features = ["v4", "serde"] }
 base64 = "0.21"
+tracing = "0.1"
 
 [dev-dependencies]
-tokio = { workspace = true, features = ["test-util"] }
+tokio-test = "0.4"
+mockall = "0.11"
+chrono = "0.4"
+
+[features]
+default = []
+integration = []
 
 

@@ -9,6 +9,18 @@ pub enum FairseqError {
     #[error("Configuration error: {0}")]
     Config(String),
 
+    /// Invalid input error
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
+
+    /// Lighthouse error
+    #[error("Lighthouse error: {0}")]
+    Lighthouse(String),
+
+    /// Verification failed error
+    #[error("Verification failed: {0}")]
+    Verification(String),
+
     /// Lighthouse connection error
     #[error("Lighthouse connection error: {0}")]
     LighthouseConnection(String),
@@ -35,7 +47,7 @@ pub enum FairseqError {
 
     /// Serialization error
     #[error("Serialization error: {0}")]
-    Serialization(#[from] serde_json::Error),
+    Serialization(String),
 
     /// HTTP error
     #[error("HTTP error: {0}")]
@@ -56,6 +68,12 @@ pub enum FairseqError {
     /// Internal error
     #[error("Internal error: {0}")]
     Internal(String),
+}
+
+impl From<serde_json::Error> for FairseqError {
+    fn from(error: serde_json::Error) -> Self {
+        FairseqError::Serialization(error.to_string())
+    }
 }
 
 /// Result type alias for Fairseq operations

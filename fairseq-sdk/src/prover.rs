@@ -17,7 +17,8 @@ pub struct Prover {
 impl Prover {
     /// Create a new prover
     pub async fn new(config: Config) -> Result<Self> {
-        let lighthouse = LighthouseClient::new(config.lighthouse.clone());
+        let lighthouse = LighthouseClient::new(config.lighthouse.clone())
+            .map_err(|e| FairseqError::LighthouseConnection(e.to_string()))?;
 
         // Verify Lighthouse connection
         lighthouse
@@ -189,6 +190,73 @@ impl Prover {
         });
 
         serde_json::to_vec(&commitment).map_err(|e| FairseqError::ProofGeneration(e.to_string()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_config() -> Config {
+        let mut config = Config::default();
+        config.lighthouse.http_url = "http://127.0.0.1:1".to_string();
+        config.lighthouse.ws_url = "ws://127.0.0.1:1".to_string();
+        config.lighthouse.timeout_secs = 1;
+        config
+    }
+
+    fn build_prover() -> Prover {
+        let config = test_config();
+        let lighthouse = LighthouseClient::new(config.lighthouse.clone()).unwrap();
+        Prover { config, lighthouse }
+    }
+
+    #[tokio::test]
+    async fn test_prover_new_returns_err_without_lighthouse() {
+        let config = test_config();
+        let result = Prover::new(config).await;
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_fifo_ordering() {
+        let prover = build_prover();
+        let transactions = vec![
+            Transaction::new("tx2", 2),
+            Transaction::new("tx1", 1),
+        ];
+
+        let ordered = prover.apply_ordering(&transactions, &OrderingRule::Fifo).unwrap();
+        assert_eq!(ordered[0].hash, "tx1");
+        assert_eq!(ordered[1].hash, "tx2");
+    }
+
+    #[test]
+    fn test_duplicate_transaction_hashes_rejected() {
+        let prover = build_prover();
+        let transactions = vec![
+            Transaction::new("tx1", 1),
+            Transaction::new("tx1", 2),
+        ];
+
+        let result = prover.verify_ordering(&transactions);
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_empty_transactions_returns_err() {
+        let prover = build_prover();
+        let result = prover.prove(Vec::new()).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_prove_returns_err_without_lighthouse() {
+        let prover = build_prover();
+        let transactions = vec![Transaction::new("tx1", 1)];
+
+        let result = prover.prove(transactions).await;
+        assert!(result.is_err());
     }
 }
 

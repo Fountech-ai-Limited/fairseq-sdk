@@ -1,6 +1,9 @@
 //! Lighthouse client implementation
 
-use crate::{epoch::Epoch, error::LighthouseError};
+use crate::{
+    epoch::Epoch,
+    error::{LighthouseError, Result},
+};
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -42,20 +45,20 @@ pub struct LighthouseClient {
 
 impl LighthouseClient {
     /// Create a new Lighthouse client
-    pub fn new(config: LighthouseConfig) -> Self {
+    pub fn new(config: LighthouseConfig) -> Result<Self> {
         let (epoch_sender, _) = broadcast::channel(100);
 
         let http_client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(config.timeout_secs))
             .build()
-            .expect("Failed to create HTTP client");
+            .map_err(|e| LighthouseError::Connection(e.to_string()))?;
 
-        Self {
+        Ok(Self {
             config,
             http_client,
             current_epoch: Arc::new(RwLock::new(None)),
             epoch_sender,
-        }
+        })
     }
 
     /// Get the current epoch from the Lighthouse
@@ -73,17 +76,21 @@ impl LighthouseClient {
             .map_err(|e| LighthouseError::Connection(e.to_string()))?;
 
         if !response.status().is_success() {
-            return Err(LighthouseError::Api(format!(
-                "HTTP {}: {}",
-                response.status(),
-                response.text().await.unwrap_or_default()
-            )));
+            let status = response.status();
+            let message = response.text().await.unwrap_or_default();
+            if status.as_u16() == 404 {
+                return Err(LighthouseError::EpochNotFound { epoch_number: 0 });
+            }
+            return Err(LighthouseError::ServiceError {
+                code: status.as_u16() as i32,
+                message,
+            });
         }
 
         let epoch: Epoch = response
             .json()
             .await
-            .map_err(|e| LighthouseError::Parse(e.to_string()))?;
+            .map_err(|e| LighthouseError::InvalidResponse(e.to_string()))?;
 
         *self.current_epoch.write().await = Some(epoch.clone());
 
@@ -105,17 +112,21 @@ impl LighthouseClient {
             .map_err(|e| LighthouseError::Connection(e.to_string()))?;
 
         if !response.status().is_success() {
-            return Err(LighthouseError::Api(format!(
-                "HTTP {}: {}",
-                response.status(),
-                response.text().await.unwrap_or_default()
-            )));
+            let status = response.status();
+            let message = response.text().await.unwrap_or_default();
+            if status.as_u16() == 404 {
+                return Err(LighthouseError::EpochNotFound { epoch_number });
+            }
+            return Err(LighthouseError::ServiceError {
+                code: status.as_u16() as i32,
+                message,
+            });
         }
 
         response
             .json()
             .await
-            .map_err(|e| LighthouseError::Parse(e.to_string()))
+            .map_err(|e| LighthouseError::InvalidResponse(e.to_string()))
     }
 
     /// Get the cached current epoch (if available)
