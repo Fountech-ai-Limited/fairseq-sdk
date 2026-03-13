@@ -62,7 +62,7 @@ impl LighthouseClient {
     }
 
     /// Get the current epoch from the Lighthouse
-    pub async fn get_current_epoch(&self) -> Result<Epoch, LighthouseError> {
+    pub async fn get_current_epoch(&self) -> Result<Epoch> {
         let url = format!("{}/v1/epoch/current", self.config.http_url);
 
         let mut request = self.http_client.get(&url);
@@ -98,7 +98,7 @@ impl LighthouseClient {
     }
 
     /// Get a specific epoch by number
-    pub async fn get_epoch(&self, epoch_number: u64) -> Result<Epoch, LighthouseError> {
+    pub async fn get_epoch(&self, epoch_number: u64) -> Result<Epoch> {
         let url = format!("{}/v1/epoch/{}", self.config.http_url, epoch_number);
 
         let mut request = self.http_client.get(&url);
@@ -140,7 +140,7 @@ impl LighthouseClient {
     }
 
     /// Start the WebSocket connection for epoch subscriptions
-    pub async fn start_subscription(&self) -> Result<(), LighthouseError> {
+    pub async fn start_subscription(&self) -> Result<()> {
         let ws_url = &self.config.ws_url;
         let current_epoch = self.current_epoch.clone();
         let epoch_sender = self.epoch_sender.clone();
