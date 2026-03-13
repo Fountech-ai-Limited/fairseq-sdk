@@ -76,7 +76,7 @@ impl Prover {
         let transactions_hash = hash_ordered_transactions(&tx_data);
 
         // Generate proof data
-        // In production, this would invoke the T-zkVM to generate a ZK proof.
+        // In production, this would invoke the zkVM to generate a ZK proof.
         // For MVP, we create a signed commitment.
         let proof_data = self.generate_proof_data(&ordered, &epoch_start)?;
 
@@ -177,7 +177,7 @@ impl Prover {
     }
 
     /// Generate proof data
-    /// In production, this would invoke T-zkVM.
+    /// In production, this would invoke zkVM.
     fn generate_proof_data(&self, transactions: &[Transaction], epoch: &fairseq_lighthouse::Epoch) -> Result<Vec<u8>> {
         let commitment = serde_json::json!({
             "version": 1,
