@@ -1,4 +1,6 @@
 //! Proof verification
+//!
+//! MVP implementation using signed commitments. Full zero-knowledge proof integration planned for v2.
 
 use crate::config::Config;
 use fairseq_core::{FairseqError, Proof, Result, Transaction, VerificationResult};

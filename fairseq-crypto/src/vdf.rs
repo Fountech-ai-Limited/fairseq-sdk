@@ -1,5 +1,7 @@
 //! VDF (Verifiable Delay Function) verification
 //!
+//! MVP placeholder. Wesolowski VDF verification planned for v2.
+//!
 //! Note: VDF computation happens in the Lighthouse service.
 //! This module provides verification utilities for clients.
 

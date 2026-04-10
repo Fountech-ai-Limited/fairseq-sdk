@@ -1,4 +1,6 @@
 //! Proof generation
+//!
+//! MVP implementation using signed commitments. Full zero-knowledge proof integration planned for v2.
 
 use crate::config::Config;
 use chrono::Utc;
