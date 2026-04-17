@@ -1,6 +1,10 @@
 //! Proof verification
 //!
-//! MVP implementation using signed commitments. Full zero-knowledge proof integration planned for v2.
+//! ALPHA IMPLEMENTATION: Verification checks commitment structure and validates
+//! epoch anchors against the Lighthouse service. It does not verify a ZK proof
+//! because proofs are currently signed commitments (see prover.rs).
+//! In v2, `verify_proof_data()` will verify a succinct ZK proof against public
+//! parameters, removing the need to trust the prover.
 
 use crate::config::Config;
 use fairseq_core::{FairseqError, Proof, Result, Transaction, VerificationResult};
@@ -104,8 +108,11 @@ impl Verifier {
         Ok(VerificationResult::valid())
     }
 
-    /// Verify the proof data
-    /// In production, this would verify the ZK proof.
+    /// Verify the proof data.
+    ///
+    /// ALPHA PLACEHOLDER: Only checks that the commitment JSON is well-formed
+    /// and has version == 1. Does not verify a ZK proof.
+    /// TODO(v2): Verify the zkVM proof against public verification parameters.
     fn verify_proof_data(&self, proof: &Proof) -> Result<bool> {
         let commitment: serde_json::Value =
             serde_json::from_slice(&proof.proof_data).map_err(|e| {

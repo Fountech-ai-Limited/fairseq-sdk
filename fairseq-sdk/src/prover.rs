@@ -1,6 +1,11 @@
 //! Proof generation
 //!
-//! MVP implementation using signed commitments. Full zero-knowledge proof integration planned for v2.
+//! ALPHA IMPLEMENTATION: Proofs are currently signed JSON commitments bound to
+//! Lighthouse epoch data. This gives you real temporal anchoring but not
+//! zero-knowledge properties. In v2, `generate_proof_data()` will invoke a
+//! zkVM (e.g., SP1 or RISC Zero) to produce a succinct ZK proof that the
+//! ordering is correct relative to the epoch window, without revealing
+//! transaction contents.
 
 use crate::config::Config;
 use chrono::Utc;
@@ -178,8 +183,12 @@ impl Prover {
         Ok(())
     }
 
-    /// Generate proof data
-    /// In production, this would invoke zkVM.
+    /// Generate proof data.
+    ///
+    /// ALPHA PLACEHOLDER: Produces a JSON commitment (not a ZK proof).
+    /// The commitment binds the transaction set to a specific Lighthouse epoch,
+    /// but a verifier must trust the prover's honesty about ordering.
+    /// TODO(v2): Replace with zkVM guest program execution.
     fn generate_proof_data(&self, transactions: &[Transaction], epoch: &fairseq_lighthouse::Epoch) -> Result<Vec<u8>> {
         let commitment = serde_json::json!({
             "version": 1,

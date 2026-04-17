@@ -1,8 +1,17 @@
 # Fairseq SDK
 
+> **Alpha / MVP** -- This SDK is under active development. The cryptographic
+> primitives described below use simplified placeholder implementations suitable
+> for integration testing and early adopter feedback. Production-grade
+> cryptography (Wesolowski VDF verification, zkVM proof generation) is on the
+> roadmap but not yet integrated. See *Cryptographic Roadmap* at the bottom of
+> this file for details.
+
 **Temporal ordering proofs for blockchain protocols.**
 
-Fairseq is the Rust SDK for generating and verifying cryptographic proofs that transactions were sequenced fairly (FIFO), anchored to verifiable time via the Lighthouse Network.
+Fairseq is the Rust SDK for generating and verifying temporal ordering proofs
+that transactions were sequenced fairly (FIFO), anchored to verifiable time via
+the Lighthouse Network.
 
 ## Installation
 
@@ -98,8 +107,22 @@ let config = Config::default()
 
 Full documentation: `https://fairseq.io/docs`
 
+## Cryptographic Roadmap
+
+The current alpha uses simplified implementations for core crypto operations:
+
+| Component | Current (v0.1 alpha) | Planned (v2) |
+|---|---|---|
+| **VDF verification** | Placeholder that validates non-zero input/output. Lighthouse signature is trusted. | Wesolowski VDF verification with full proof checking. |
+| **Proof generation** | Signed commitment (JSON structure bound to epoch data). | zkVM-based zero-knowledge proof generation. |
+| **Proof verification** | Commitment structure and epoch anchor validation. | Full ZK proof verification against public parameters. |
+
+These placeholders let you integrate the SDK, test your pipeline end-to-end, and
+provide real temporal anchoring via the Lighthouse Network. The proof data is
+cryptographically bound to beacon epochs today; what changes in v2 is the
+strength of the binding (commitment -> ZK proof) and the independence of
+verification (trust Lighthouse signature -> verify VDF locally).
+
 ## License
 
 MIT OR Apache-2.0
-
-

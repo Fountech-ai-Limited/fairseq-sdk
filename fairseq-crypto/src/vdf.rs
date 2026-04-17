@@ -1,9 +1,18 @@
 //! VDF (Verifiable Delay Function) verification
 //!
-//! MVP placeholder. Wesolowski VDF verification planned for v2.
+//! ALPHA PLACEHOLDER -- This module does NOT implement real VDF verification.
+//! `verify_vdf_proof()` only checks that the input and output are non-zero,
+//! which is enough to catch obviously malformed data but does not perform
+//! Wesolowski proof verification. In the current architecture, clients trust
+//! the Lighthouse service's Ed25519 signature on epoch data rather than
+//! independently verifying the VDF.
 //!
-//! Note: VDF computation happens in the Lighthouse service.
-//! This module provides verification utilities for clients.
+//! Planned for v2: integrate a Wesolowski VDF verifier (likely via the
+//! `vdf` crate or a custom RSA-group implementation) so that clients can
+//! verify epoch timing proofs without trusting the Lighthouse operator.
+//!
+//! VDF computation itself happens inside the Lighthouse service.
+//! This module provides client-side verification utilities.
 
 use crate::hash::sha256;
 use thiserror::Error;
@@ -31,13 +40,15 @@ pub struct VdfProof {
     pub iterations: u64,
 }
 
-/// Verify a VDF proof
+/// Verify a VDF proof.
 ///
-/// This is a placeholder for actual VDF verification.
-/// In production, this would verify the Wesolowski proof.
+/// ALPHA PLACEHOLDER: This only rejects proofs with all-zero input or output.
+/// It does NOT perform Wesolowski verification. Real verification will require
+/// an RSA modulus parameter and iterative squaring check. See the Cryptographic
+/// Roadmap in the SDK README for the upgrade path.
 pub fn verify_vdf_proof(proof: &VdfProof) -> Result<(), VdfError> {
-    // Placeholder: In production, implement Wesolowski VDF verification
-    // For MVP, we trust the Lighthouse service's signature on epochs
+    // TODO(v2): Replace with Wesolowski VDF verification.
+    // For now we trust the Lighthouse service's Ed25519 signature on epochs.
 
     if proof.input == [0u8; 32] {
         return Err(VdfError::InvalidInput);
